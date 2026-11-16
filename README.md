@@ -423,18 +423,7 @@ gis-mcp/
 - 不含 Web 前端、数据库、用户鉴权，也不接超图 iServer（无商业 license）。
 - 本项目面向学习和演示，不承诺公共 API 的 SLA。
 
-## 10 分钟面试演示脚本
 
-| 时间 | 内容 |
-| --- | --- |
-| 0:00–0:45 | 一句话定位：把 GIS 计算封装成 5 个 MCP 工具，开源栈，不依赖商业 license；展示架构图 |
-| 0:45–3:00 | 在 Qoder 里问“聊城大学 3 公里内有哪些医院，按距离排序”，展示 geocode → POI 表格 |
-| 3:00–5:30 | 问“分析聊城大学 3 公里内医院服务区并出图”，打开 `out/*.png` 和 GeoJSON |
-| 5:30–6:30 | 用 `geojson_stats` 复核 GeoJSON：4 要素、Point/Polygon、28.254 km²、UTM 50N |
-| 6:30–9:00 | 讲代码：五个工具契约、结构化错误、AEQD 缓冲、UTM 面积、方位统计、限流/重试/缓存 |
-| 9:00–10:00 | 讲数据源合规和限制：OSM ODbL、Nominatim 1 req/s、Overpass 25s/重试 1 次、OSM 覆盖不全 |
-
-演示前可以先跑一次 `analyze_service_area` 预热进程内缓存；同一 MCP 服务进程内 5 分钟内重复查询会更快。
 
 ## License
 
