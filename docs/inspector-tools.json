@@ -1,0 +1,149 @@
+{
+  "tools": [
+    {
+      "name": "geocode_place",
+      "description": "把地名或地址解析为经纬度（数据源：OpenStreetMap Nominatim）。\n\n    参数:\n        name: 地名或地址，中文或英文均可，例如 \"聊城大学\"、\"Liaocheng University\"。\n\n    成功返回:\n        {\"lat\": float, \"lon\": float, \"display_name\": str}\n        lat/lon 为 WGS84 十进制度。从多个候选中按名称相似度选最佳匹配，\n        因此“聊城大学”可能返回“聊城大学东校区”，用它做周边检索仍在同一区域。\n\n    失败返回:\n        {\"error\": {\"code\": str, \"message\": str, \"hint\": str?}}\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "geocode_placeArguments"
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": true,
+        "title": "geocode_placeDictOutput"
+      }
+    },
+    {
+      "name": "search_poi",
+      "description": "检索某点附近指定类别的 POI，按距离升序返回（数据源：OpenStreetMap Overpass API）。\n\n    参数:\n        category: 类别。支持中文常用类别（医院、诊所、药店、学校、大学、餐厅、银行、\n                  超市、公园、酒店、加油站、公交站、停车场等），也支持英文别名\n                  （hospital、school 等）或原始 OSM 标签，如 \"amenity=clinic\"。\n        lat: 中心点纬度（WGS84）。\n        lon: 中心点经度（WGS84）。\n        radius_m: 检索半径（米），范围 (0, 50000]。\n\n    成功返回（JSON 数组文本）:\n        [{\"name\": str, \"lat\": float, \"lon\": float, \"distance_m\": float}, ...]\n        已按 distance_m 升序。数据来自 OSM，覆盖可能不全；未命名要素用\n        \"类别 #类型/id\" 作为 name。\n    失败返回:\n        {\"error\": {\"code\": str, \"message\": str, \"hint\": str?}}\n\n    网络策略:\n        单次查询超时 25 秒；失败自动重试 1 次；官方节点繁忙时自动切换备用\n        Overpass 节点；相同查询 5 分钟内使用内存缓存。请勿高频调用公共 API。\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
+          },
+          "radius_m": {
+            "title": "Radius M",
+            "type": "number"
+          }
+        },
+        "required": [
+          "category",
+          "lat",
+          "lon",
+          "radius_m"
+        ],
+        "title": "search_poiArguments"
+      }
+    },
+    {
+      "name": "make_buffer",
+      "description": "在 (lat, lon) 周围生成指定半径的测地缓冲圆，返回 GeoJSON Polygon。\n\n    参数:\n        lat: 圆心纬度（WGS84，十进制度）。\n        lon: 圆心经度（WGS84，十进制度）。\n        radius_m: 半径（米），范围 (0, 50000]。\n\n    实现:\n        以圆心建立局部方位等距投影（AEQD），在投影平面内生成 64 段/象限的圆，\n        再反投影回 WGS84。城市尺度下与椭球测地距离误差可忽略。\n\n    成功返回:\n        GeoJSON Polygon 几何对象：{\"type\": \"Polygon\", \"coordinates\": [[[lon, lat], ...]]}\n    失败返回:\n        {\"error\": {\"code\": str, \"message\": str, \"hint\": str?}}\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
+          },
+          "radius_m": {
+            "title": "Radius M",
+            "type": "number"
+          }
+        },
+        "required": [
+          "lat",
+          "lon",
+          "radius_m"
+        ],
+        "title": "make_bufferArguments"
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": true,
+        "title": "make_bufferDictOutput"
+      }
+    },
+    {
+      "name": "geojson_stats",
+      "description": "读取本地 GeoJSON 文件，统计要素数、几何类型、包围盒和总面积。\n\n    参数:\n        path: GeoJSON 文件路径。相对路径按项目根目录解析。\n              支持 FeatureCollection、Feature 或单个 Geometry。\n\n    面积:\n        假定坐标为 WGS84 经纬度。按全部要素包围盒的中心经度自动选择 UTM 分区，\n        投影后计算面积并求和；输出 m² 和 km²。多个面重叠时按要素分别累加。\n        跨多个 UTM 分区的大范围数据存在投影误差。\n\n    成功返回:\n        {\"path\": str, \"feature_count\": int, \"geometry_types\": [str],\n         \"bbox\": [minx, miny, maxx, maxy] | null,\n         \"area_m2\": float, \"area_km2\": float, \"utm_zone\": str | null}\n    失败返回:\n        {\"error\": {\"code\": str, \"message\": str, \"hint\": str?}}\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "title": "geojson_statsArguments"
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": true,
+        "title": "geojson_statsDictOutput"
+      }
+    },
+    {
+      "name": "analyze_service_area",
+      "description": "分析某点的服务区：检索半径内 POI，统计距离与八方位分布，并输出 GeoJSON 和 PNG。\n\n    参数:\n        lat: 中心点纬度（WGS84）。\n        lon: 中心点经度（WGS84）。\n        radius_m: 分析半径（米），范围 (0, 50000]。\n        category: POI 类别，与 search_poi 相同（如 \"医院\"、\"学校\"、amenity=clinic）。\n\n    输出文件（写到项目 out/ 目录）:\n        out/service_area_<类别>_<半径>m_<时间戳>.geojson\n            包含中心点、缓冲面、全部 POI 点（含距离与方位）及统计元数据。\n        out/service_area_<类别>_<半径>m_<时间戳>.png\n            服务区地图：缓冲区、POI、最近点标注、统计框、八方位玫瑰图、OSM 署名。\n\n    成功返回:\n        {\"category\": str, \"category_label\": str,\n         \"center\": {\"lat\": float, \"lon\": float}, \"radius_m\": float,\n         \"count\": int,\n         \"nearest\": {\"name\": str, \"distance_m\": float} | null,\n         \"farthest\": {\"name\": str, \"distance_m\": float} | null,\n         \"mean_distance_m\": float | null,\n         \"direction_counts\": {\"N\": int, \"NE\": int, \"E\": int, \"SE\": int,\n                              \"S\": int, \"SW\": int, \"W\": int, \"NW\": int},\n         \"outputs\": {\"geojson\": str, \"png\": str}}\n    失败返回:\n        {\"error\": {\"code\": str, \"message\": str, \"hint\": str?}}\n    ",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
+          },
+          "radius_m": {
+            "title": "Radius M",
+            "type": "number"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          }
+        },
+        "required": [
+          "lat",
+          "lon",
+          "radius_m",
+          "category"
+        ],
+        "title": "analyze_service_areaArguments"
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": true,
+        "title": "analyze_service_areaDictOutput"
+      }
+    }
+  ]
+}

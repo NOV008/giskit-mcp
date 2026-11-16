@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+out/
+.env
+_tmpdl/
+*.log
+.mcp-inspector/
+.qoder/
+node_modules/
